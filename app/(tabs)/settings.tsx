@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus, ChevronRight, Download, Upload, Trash2 } from 'lucide-react-native';
 import { useAppStore } from '../../store/useAppStore';
+import { DEFAULT_CATEGORIES, DEFAULT_PAYMENT_METHODS } from '../../lib/defaults';
 import { formatARS } from '../../lib/format';
 import { exportData, importData } from '../../lib/backup';
 import { CategorySheet } from '../../components/CategorySheet';
@@ -115,11 +116,13 @@ const bStyles = StyleSheet.create({
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function SettingsScreen() {
-  const categories     = useAppStore((s) => s.categories);
-  const paymentMethods = useAppStore((s) => s.paymentMethods);
-  const settings       = useAppStore((s) => s.settings);
-  const rehydrate      = useAppStore((s) => s.rehydrate);
-  const clearAllData   = useAppStore((s) => s.clearAllData);
+  const categories        = useAppStore((s) => s.categories);
+  const paymentMethods    = useAppStore((s) => s.paymentMethods);
+  const settings          = useAppStore((s) => s.settings);
+  const rehydrate         = useAppStore((s) => s.rehydrate);
+  const clearAllData      = useAppStore((s) => s.clearAllData);
+  const upsertCategory    = useAppStore((s) => s.upsertCategory);
+  const upsertPaymentMethod = useAppStore((s) => s.upsertPaymentMethod);
 
   const [budgetVisible,  setBudgetVisible]  = useState(false);
   const [catSheetOpen,   setCatSheetOpen]   = useState(false);
@@ -131,6 +134,11 @@ export default function SettingsScreen() {
   const archivedCats  = categories.filter((c) => c.archived);
   const activePms     = paymentMethods.filter((m) => !m.archived);
   const archivedPms   = paymentMethods.filter((m) => m.archived);
+
+  const existingCatIds = new Set(categories.map((c) => c.id));
+  const existingPmIds  = new Set(paymentMethods.map((m) => m.id));
+  const presetCats = DEFAULT_CATEGORIES.filter((c) => !existingCatIds.has(c.id));
+  const presetPms  = DEFAULT_PAYMENT_METHODS.filter((m) => !existingPmIds.has(m.id));
 
   function openAddCategory() {
     setEditingCat(null);
@@ -266,6 +274,24 @@ export default function SettingsScreen() {
               </View>
             </Pressable>
           ))}
+          {presetCats.length > 0 && (
+            <>
+              <View style={styles.presetHeader}>
+                <Text style={styles.presetHeaderLabel}>Sugerencias</Text>
+              </View>
+              {presetCats.map((cat) => (
+                <Pressable
+                  key={cat.id}
+                  style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+                  onPress={() => upsertCategory({ ...cat, archived: false })}
+                >
+                  <CategoryDot icon={cat.icon} size={32} />
+                  <Text style={[styles.rowLabel, styles.rowMuted]}>{cat.name}</Text>
+                  <Plus size={16} color={colors.primary} strokeWidth={2.5} />
+                </Pressable>
+              ))}
+            </>
+          )}
         </View>
 
         {/* ── Medios de pago ───────────────────────────────────────────── */}
@@ -318,6 +344,29 @@ export default function SettingsScreen() {
               </Pressable>
             );
           })}
+          {presetPms.length > 0 && (
+            <>
+              <View style={styles.presetHeader}>
+                <Text style={styles.presetHeaderLabel}>Sugerencias</Text>
+              </View>
+              {presetPms.map((pm) => {
+                const shortIcon = pm.icon.length > 4 ? pm.icon.slice(0, 2) : pm.icon;
+                return (
+                  <Pressable
+                    key={pm.id}
+                    style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+                    onPress={() => upsertPaymentMethod({ ...pm, archived: false })}
+                  >
+                    <View style={[styles.dot, { backgroundColor: pm.color }]}>
+                      <Text style={styles.dotText}>{shortIcon}</Text>
+                    </View>
+                    <Text style={[styles.rowLabel, styles.rowMuted]}>{pm.name}</Text>
+                    <Plus size={16} color={colors.primary} strokeWidth={2.5} />
+                  </Pressable>
+                );
+              })}
+            </>
+          )}
         </View>
 
         {/* ── Datos ────────────────────────────────────────────────────── */}
@@ -444,5 +493,15 @@ const styles = StyleSheet.create({
   emptyText: {
     fontFamily: typography.body, fontSize: typography.size.sm, color: colors.inkFaint,
     textAlign: 'center',
+  },
+
+  presetHeader: {
+    paddingHorizontal: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.xs,
+    borderTopWidth: 1, borderTopColor: colors.border,
+    backgroundColor: colors.surfaceAlt,
+  },
+  presetHeaderLabel: {
+    fontFamily: typography.bodySemibold, fontSize: 10,
+    color: colors.inkFaint, textTransform: 'uppercase', letterSpacing: 0.6,
   },
 });

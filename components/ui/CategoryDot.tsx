@@ -31,6 +31,6 @@ const styles = StyleSheet.create({
   },
   dotDefault:  { backgroundColor: '#E8E8E8' },
   dotSelected: { backgroundColor: '#1C1C1C' },
-  overlayLight: { backgroundColor: 'rgba(232,232,232,0.52)' },
+  overlayLight: { backgroundColor: 'rgba(232,232,232,0.83)' },
   overlayDark:  { backgroundColor: 'rgba(28,28,28,0.38)' },
 });

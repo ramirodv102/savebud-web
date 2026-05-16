@@ -256,6 +256,9 @@ export default function DashboardScreen() {
 
           <View style={styles.heroAmountRow}>
             <Text style={styles.heroAmount}>{formatARS(stats.totalSpent)}</Text>
+            {stats.percentUsed > 100 && (
+              <AlertTriangle size={22} color={colors.white} strokeWidth={2.5} />
+            )}
             {hasBudget && (
               <Text style={styles.heroBudget}>de {formatARSShort(settings.totalMonthlyBudget)}</Text>
             )}
