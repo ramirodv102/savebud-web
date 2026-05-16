@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { Plus, AlertTriangle, Target, ChevronRight } from 'lucide-react-native';
 import { useAppStore } from '../../store/useAppStore';
 import {
@@ -24,9 +25,9 @@ import type { Category, Expense, PaymentMethod } from '../../types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function progressColor(pct: number): string {
-  if (pct > 100) return colors.error;
-  if (pct >= 80) return colors.warning;
+function heroBarColor(percentUsed: number, monthProgress: number): string {
+  if (percentUsed > 100) return '#FF8C00';
+  if (percentUsed > monthProgress * 100 + 10) return '#FFD426';
   return colors.white;
 }
 
@@ -197,15 +198,16 @@ export default function DashboardScreen() {
     [categories, selectedCategoryId],
   );
 
-  const budgetAlert = totalBudgetAlert(stats);
-  const paceAlarm   = isPaceAlarm(stats);
-  const hasBudget   = settings.totalMonthlyBudget > 0;
-  const hasExpenses = expenses.length > 0;
-  const pct         = Math.min(stats.percentUsed, 100);
-  const barColor    = progressColor(stats.percentUsed);
+  const budgetAlert  = totalBudgetAlert(stats);
+  const paceAlarm    = isPaceAlarm(stats);
+  const hasBudget    = settings.totalMonthlyBudget > 0;
+  const hasExpenses  = expenses.length > 0;
+  const pct          = Math.min(stats.percentUsed, 100);
 
-  const today        = new Date();
-  const daysInMonth  = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const today         = new Date();
+  const daysInMonth   = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const monthProgress = today.getDate() / daysInMonth;
+  const barColor      = heroBarColor(stats.percentUsed, monthProgress);
 
   const categoryRows = useMemo(() =>
     categories
@@ -256,24 +258,30 @@ export default function DashboardScreen() {
 
           <View style={styles.heroAmountRow}>
             <Text style={styles.heroAmount}>{formatARS(stats.totalSpent)}</Text>
-            {stats.percentUsed > 100 && (
+            {hasBudget && stats.percentUsed > 100 && (
               <AlertTriangle size={22} color={colors.white} strokeWidth={2.5} />
             )}
-            {hasBudget && (
-              <Text style={styles.heroBudget}>de {formatARSShort(settings.totalMonthlyBudget)}</Text>
-            )}
           </View>
 
-          {hasBudget && (
-            <ProgressBar value={pct} color={barColor} height={8} backgroundColor="rgba(255,255,255,0.2)" />
+          {hasBudget ? (
+            <>
+              <Text style={styles.heroBudgetLine}>
+                de {formatARS(settings.totalMonthlyBudget)} presupuestados
+              </Text>
+              <ProgressBar value={pct} color={barColor} height={5} backgroundColor="rgba(255,255,255,0.2)" />
+              <View style={styles.heroMeta}>
+                <Text style={styles.heroMetaText}>Día {today.getDate()} de {daysInMonth}</Text>
+                <Text style={styles.heroMetaText}>{Math.round(stats.percentUsed)}% usado</Text>
+              </View>
+            </>
+          ) : (
+            <View style={styles.heroMeta}>
+              <Text style={styles.heroMetaText}>Día {today.getDate()} de {daysInMonth}</Text>
+              <Pressable onPress={() => router.push('/(tabs)/settings')} hitSlop={8}>
+                <Text style={styles.heroDefinirLink}>Definir presupuesto →</Text>
+              </Pressable>
+            </View>
           )}
-
-          <View style={styles.heroMeta}>
-            {hasBudget && (
-              <Text style={styles.heroMetaText}>{Math.round(stats.percentUsed)}% del presupuesto</Text>
-            )}
-            <Text style={styles.heroMetaText}>Día {today.getDate()} de {daysInMonth}</Text>
-          </View>
         </Pressable>
 
         {/* ── Stats row ───────────────────────────────────────────────────── */}
@@ -420,22 +428,27 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.65)', letterSpacing: 0.3,
   },
   heroAmountRow: {
-    flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
   },
   heroAmount: {
     fontFamily: typography.displayBold, fontSize: typography.size.hero,
     color: colors.white, lineHeight: typography.size.hero * 1.05,
   },
-  heroBudget: {
-    fontFamily: typography.display, fontSize: typography.size.lg,
-    color: 'rgba(255,255,255,0.55)', marginBottom: 6,
+  heroBudgetLine: {
+    fontFamily: typography.body, fontSize: typography.size.sm,
+    color: 'rgba(255,255,255,0.60)', marginTop: -spacing.xs,
   },
   heroMeta: {
-    flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.xs,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    marginTop: spacing.xs,
   },
   heroMetaText: {
     fontFamily: typography.body, fontSize: typography.size.xs,
     color: 'rgba(255,255,255,0.55)',
+  },
+  heroDefinirLink: {
+    fontFamily: typography.bodyMedium, fontSize: typography.size.xs,
+    color: 'rgba(255,255,255,0.80)',
   },
 
   statsRow: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.sm },
