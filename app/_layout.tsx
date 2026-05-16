@@ -48,6 +48,8 @@ export default function RootLayout() {
       <StatusBar style="dark" backgroundColor={colors.background} />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
+        <Stack.Screen name="entry" options={{ animation: 'fade' }} />
+        <Stack.Screen name="tutorial" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="onboarding" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen

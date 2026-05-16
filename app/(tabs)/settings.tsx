@@ -4,7 +4,8 @@ import {
   Modal, TextInput, Alert, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, ChevronRight, Download, Upload, Trash2 } from 'lucide-react-native';
+import { Plus, ChevronRight, Download, Upload, Trash2, BookOpen } from 'lucide-react-native';
+import { router } from 'expo-router';
 import { useAppStore } from '../../store/useAppStore';
 import { DEFAULT_CATEGORIES, DEFAULT_PAYMENT_METHODS } from '../../lib/defaults';
 import { formatARS } from '../../lib/format';
@@ -367,6 +368,19 @@ export default function SettingsScreen() {
               })}
             </>
           )}
+        </View>
+
+        {/* ── App ──────────────────────────────────────────────────────── */}
+        <Text style={styles.sectionLabel}>App</Text>
+        <View style={[styles.card, shadows.sm]}>
+          <Pressable
+            style={({ pressed }) => [styles.row, styles.lastRow, pressed && styles.rowPressed]}
+            onPress={() => router.push('/tutorial')}
+          >
+            <BookOpen size={18} color={colors.primary} strokeWidth={2} />
+            <Text style={styles.rowLabel}>Ver tutorial de nuevo</Text>
+            <ChevronRight size={16} color={colors.inkFaint} strokeWidth={2} />
+          </Pressable>
         </View>
 
         {/* ── Datos ────────────────────────────────────────────────────── */}

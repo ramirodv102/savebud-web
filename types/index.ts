@@ -32,6 +32,7 @@ export type Settings = {
   totalMonthlyBudget: number;
   currency: 'ARS';
   onboardingComplete: boolean;
+  tutorialSeen: boolean;
 };
 
 // Derived stats — computed at render time from expenses, never stored in state

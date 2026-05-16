@@ -40,6 +40,7 @@ const DEFAULT_SETTINGS: Settings = {
   totalMonthlyBudget: 0,
   currency: 'ARS',
   onboardingComplete: false,
+  tutorialSeen: false,
 };
 
 export const useAppStore = create<AppState>((set) => ({
