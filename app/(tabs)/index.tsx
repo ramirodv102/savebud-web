@@ -1,11 +1,7 @@
 import { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, AlertTriangle, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react-native';
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+import { Plus, AlertTriangle, ChevronRight } from 'lucide-react-native';
 import { useAppStore } from '../../store/useAppStore';
 import {
   computeMonthStats,
@@ -14,11 +10,12 @@ import {
   isPaceAlarm,
   filterCurrentMonth,
 } from '../../lib/compute';
-import { formatARS, formatARSShort, currentMonthName, dateLabel } from '../../lib/format';
+import { formatARS, formatARSShort, currentMonthName } from '../../lib/format';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { AlertBanner } from '../../components/AlertBanner';
 import { AddExpenseSheet } from '../../components/AddExpenseSheet';
 import { EditExpenseSheet } from '../../components/EditExpenseSheet';
+import { CategoryDetailSheet } from '../../components/CategoryDetailSheet';
 import { colors, spacing, radius, typography, shadows } from '../../lib/theme';
 import type { Category, Expense, PaymentMethod } from '../../types';
 
@@ -66,28 +63,22 @@ const BAR_COLOR: Record<string, string> = {
 };
 
 function CategoryRow({
-  category, spent, monthExpenses, expanded, onToggle, onExpensePress,
+  category, spent, onPress,
 }: {
   category: Category;
   spent: number;
-  monthExpenses: Expense[];
-  expanded: boolean;
-  onToggle: () => void;
-  onExpensePress: (e: Expense) => void;
+  onPress: () => void;
 }) {
-  const hasBudget  = category.monthlyBudget !== null && category.monthlyBudget > 0;
-  const pct        = hasBudget ? (spent / category.monthlyBudget!) * 100 : 0;
-  const alert      = categoryAlert(spent, category.monthlyBudget);
-  const barColor   = BAR_COLOR[alert];
-  const exceeded   = alert === 'strong';
-  const hasExpenses = monthExpenses.length > 0;
-
-  const sorted = [...monthExpenses].sort((a, b) => b.date.localeCompare(a.date));
+  const hasBudget = category.monthlyBudget !== null && category.monthlyBudget > 0;
+  const pct       = hasBudget ? (spent / category.monthlyBudget!) * 100 : 0;
+  const alert     = categoryAlert(spent, category.monthlyBudget);
+  const barColor  = BAR_COLOR[alert];
+  const exceeded  = alert === 'strong';
 
   return (
     <Pressable
-      style={({ pressed }) => [catStyles.row, pressed && hasExpenses && catStyles.rowPressed]}
-      onPress={hasExpenses ? onToggle : undefined}
+      style={({ pressed }) => [catStyles.row, pressed && catStyles.rowPressed]}
+      onPress={onPress}
     >
       <View style={[catStyles.dot, { backgroundColor: category.color }]}>
         <Text style={catStyles.emoji}>{category.icon}</Text>
@@ -97,15 +88,13 @@ function CategoryRow({
           <View style={catStyles.nameRow}>
             <Text style={catStyles.name}>{category.name}</Text>
             {exceeded && <AlertTriangle size={13} color={colors.error} strokeWidth={2.5} />}
-            {hasExpenses && (
-              expanded
-                ? <ChevronUp   size={12} color={colors.inkFaint} strokeWidth={2.5} />
-                : <ChevronDown size={12} color={colors.inkFaint} strokeWidth={2.5} />
-            )}
           </View>
-          <Text style={[catStyles.spent, alert !== 'none' && { color: barColor }]}>
-            {formatARSShort(spent)}
-          </Text>
+          <View style={catStyles.rightRow}>
+            <Text style={[catStyles.spent, exceeded && { color: colors.error }]}>
+              {formatARSShort(spent)}
+            </Text>
+            <ChevronRight size={14} color={colors.inkFaint} strokeWidth={2} />
+          </View>
         </View>
 
         {hasBudget ? (
@@ -117,29 +106,6 @@ function CategoryRow({
           </>
         ) : (
           <View style={catStyles.noLimitBar} />
-        )}
-
-        {/* Expanded expense list */}
-        {expanded && (
-          <View style={catStyles.expList}>
-            {sorted.map((e) => (
-              <Pressable
-                key={e.id}
-                style={({ pressed }) => [catStyles.expRow, pressed && catStyles.expRowPressed]}
-                onPress={() => onExpensePress(e)}
-              >
-                <View style={catStyles.expInfo}>
-                  {e.note
-                    ? <Text style={catStyles.expNote} numberOfLines={1}>{e.note}</Text>
-                    : <Text style={catStyles.expDateMain}>{dateLabel(e.date)}</Text>
-                  }
-                  {e.note && <Text style={catStyles.expDateSub}>{dateLabel(e.date)}</Text>}
-                </View>
-                <Text style={catStyles.expAmount}>{formatARSShort(e.amount)}</Text>
-                <ChevronRight size={13} color={colors.inkFaint} strokeWidth={2} />
-              </Pressable>
-            ))}
-          </View>
         )}
       </View>
     </Pressable>
@@ -161,36 +127,11 @@ const catStyles = StyleSheet.create({
   info: { flex: 1, gap: 6 },
   labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  name: { fontFamily: typography.bodyMedium, fontSize: typography.size.md, color: colors.ink },
-  spent: { fontFamily: typography.display, fontSize: typography.size.md, color: colors.ink },
+  rightRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  name:   { fontFamily: typography.bodyMedium, fontSize: typography.size.md, color: colors.ink },
+  spent:  { fontFamily: typography.display, fontSize: typography.size.md, color: colors.ink },
   budget: { fontFamily: typography.body, fontSize: typography.size.xs, color: colors.inkFaint },
   noLimitBar: { height: 5, backgroundColor: colors.border, borderRadius: 3 },
-
-  // Expanded expense list
-  expList: {
-    marginTop: spacing.xs,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  expRow: {
-    flexDirection: 'row', alignItems: 'center',
-    gap: spacing.sm, paddingVertical: spacing.sm,
-    borderBottomWidth: 1, borderBottomColor: colors.border,
-  },
-  expRowPressed: { opacity: 0.6 },
-  expInfo: { flex: 1, gap: 1 },
-  expNote: {
-    fontFamily: typography.body, fontSize: typography.size.sm, color: colors.ink,
-  },
-  expDateMain: {
-    fontFamily: typography.body, fontSize: typography.size.sm, color: colors.inkMuted,
-  },
-  expDateSub: {
-    fontFamily: typography.body, fontSize: typography.size.xs, color: colors.inkFaint,
-  },
-  expAmount: {
-    fontFamily: typography.display, fontSize: typography.size.sm, color: colors.ink, flexShrink: 0,
-  },
 });
 
 // ── Payment method chip ───────────────────────────────────────────────────────
@@ -231,7 +172,7 @@ export default function DashboardScreen() {
   const stats = useMemo(() => computeMonthStats(expenses, settings), [expenses, settings]);
   const [sheetOpen,          setSheetOpen]          = useState(false);
   const [editingExpense,     setEditingExpense]      = useState<Expense | null>(null);
-  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
   const expensesByCatId = useMemo(() => {
     const map: Record<string, Expense[]> = {};
@@ -242,10 +183,10 @@ export default function DashboardScreen() {
     return map;
   }, [expenses]);
 
-  function toggleCategory(id: string) {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpandedCategoryId((prev) => (prev === id ? null : id));
-  }
+  const selectedCategory = useMemo(
+    () => categories.find((c) => c.id === selectedCategoryId) ?? null,
+    [categories, selectedCategoryId],
+  );
 
   const budgetAlert = totalBudgetAlert(stats);
   const paceAlarm   = isPaceAlarm(stats);
@@ -363,10 +304,7 @@ export default function DashboardScreen() {
                       key={cat.id}
                       category={cat}
                       spent={cat.spent}
-                      monthExpenses={expensesByCatId[cat.id] ?? []}
-                      expanded={expandedCategoryId === cat.id}
-                      onToggle={() => toggleCategory(cat.id)}
-                      onExpensePress={setEditingExpense}
+                      onPress={() => setSelectedCategoryId(cat.id)}
                     />
                   ))}
                 </View>
@@ -406,6 +344,13 @@ export default function DashboardScreen() {
         visible={editingExpense !== null}
         expense={editingExpense}
         onClose={() => setEditingExpense(null)}
+      />
+      <CategoryDetailSheet
+        visible={selectedCategoryId !== null}
+        category={selectedCategory}
+        expenses={expensesByCatId[selectedCategoryId ?? ''] ?? []}
+        onClose={() => setSelectedCategoryId(null)}
+        onExpensePress={setEditingExpense}
       />
     </SafeAreaView>
   );
