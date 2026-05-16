@@ -12,6 +12,7 @@ import {
 } from '../../lib/compute';
 import { formatARS, formatARSShort, currentMonthName } from '../../lib/format';
 import { ProgressBar } from '../../components/ui/ProgressBar';
+import { CategoryDot } from '../../components/ui/CategoryDot';
 import { AlertBanner } from '../../components/AlertBanner';
 import { AddExpenseSheet } from '../../components/AddExpenseSheet';
 import { EditExpenseSheet } from '../../components/EditExpenseSheet';
@@ -65,7 +66,6 @@ const BAR_COLOR: Record<string, string> = {
   strong: colors.error,
 };
 
-const DOT_BG = '#EDEDED';
 
 function CategoryRow({
   category, spent, onPress,
@@ -83,9 +83,7 @@ function CategoryRow({
       style={({ pressed }) => [catStyles.row, pressed && catStyles.rowPressed]}
       onPress={onPress}
     >
-      <View style={[catStyles.dot, { backgroundColor: DOT_BG }]}>
-        <Text style={catStyles.emoji}>{category.icon}</Text>
-      </View>
+      <CategoryDot icon={category.icon} size={38} />
       <View style={catStyles.info}>
         <View style={catStyles.labelRow}>
           <View style={catStyles.nameRow}>
@@ -128,11 +126,6 @@ const catStyles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: colors.border,
   },
   rowPressed: { opacity: 0.6 },
-  dot: {
-    width: 38, height: 38, borderRadius: 19,
-    alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2,
-  },
-  emoji: { fontSize: 18 },
   info: { flex: 1, gap: 6 },
   labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },

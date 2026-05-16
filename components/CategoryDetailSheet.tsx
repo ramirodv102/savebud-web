@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X, AlertTriangle, Target, ChevronRight } from 'lucide-react-native';
+import { CategoryDot } from './ui/CategoryDot';
 import { categoryAlert } from '../lib/compute';
 import { formatARSShort, dateLabel } from '../lib/format';
 import { ProgressBar } from './ui/ProgressBar';
@@ -83,9 +84,7 @@ export function CategoryDetailSheet({ visible, category, expenses, onClose, onEx
 
           {/* ── Header ─────────────────────────────────────────────────────── */}
           <View style={styles.header}>
-            <View style={[styles.headerDot, { backgroundColor: category.color }]}>
-              <Text style={styles.headerEmoji}>{category.icon}</Text>
-            </View>
+            <CategoryDot icon={category.icon} size={48} />
             <View style={styles.headerInfo}>
               <View style={styles.headerNameRow}>
                 <Text style={styles.headerName}>{category.name}</Text>
@@ -184,11 +183,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderBottomWidth: 1, borderBottomColor: colors.border,
   },
-  headerDot: {
-    width: 48, height: 48, borderRadius: 24,
-    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-  },
-  headerEmoji: { fontSize: 22 },
   headerInfo: { flex: 1 },
   headerNameRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   headerName: {

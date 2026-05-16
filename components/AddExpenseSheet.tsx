@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { X } from 'lucide-react-native';
+import { CategoryDot } from './ui/CategoryDot';
 import { format, parseISO, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useAppStore } from '../store/useAppStore';
@@ -215,13 +216,7 @@ export function AddExpenseSheet({ visible, onClose }: Props) {
                   const sel = categoryId === cat.id;
                   return (
                     <Pressable key={cat.id} style={styles.catChip} onPress={() => setCategoryId(cat.id)}>
-                      <View style={[
-                        styles.catCircle,
-                        { backgroundColor: sel ? cat.color : colors.surfaceAlt },
-                        sel && styles.catCircleSelected,
-                      ]}>
-                        <Text style={styles.catEmoji}>{cat.icon}</Text>
-                      </View>
+                      <CategoryDot icon={cat.icon} size={52} selected={sel} />
                       <Text
                         style={[styles.catName, sel && styles.catNameSelected]}
                         numberOfLines={2}
@@ -427,15 +422,6 @@ const styles = StyleSheet.create({
 
   // Category chip
   catChip: { alignItems: 'center', gap: spacing.xs, width: 64 },
-  catCircle: {
-    width: 52, height: 52, borderRadius: 26,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  catCircleSelected: {
-    shadowColor: '#000', shadowOpacity: 0.15,
-    shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 3,
-  },
-  catEmoji: { fontSize: 22 },
   catName: {
     fontFamily: typography.body,
     fontSize: typography.size.xs,

@@ -5,12 +5,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X, ChevronRight } from 'lucide-react-native';
+import { CategoryDot } from './ui/CategoryDot';
 import { useAppStore } from '../store/useAppStore';
 import { currentMonthName, formatARS, formatARSShort, dateLabel } from '../lib/format';
 import { colors, spacing, radius, typography } from '../lib/theme';
 import type { Expense } from '../types';
 
-const DOT_BG = '#EDEDED';
 
 type Props = {
   visible: boolean;
@@ -112,9 +112,7 @@ export function MonthExpensesSheet({ visible, expenses, totalSpent, budget, onCl
                           style={({ pressed }) => [styles.expRow, pressed && styles.expRowPressed]}
                           onPress={() => { pendingExp.current = e; dismiss(); }}
                         >
-                          <View style={[styles.dot, { backgroundColor: cat?.color ?? DOT_BG }]}>
-                            <Text style={styles.dotEmoji}>{cat?.icon ?? '?'}</Text>
-                          </View>
+                          <CategoryDot icon={cat?.icon ?? '?'} size={34} />
                           <View style={styles.expInfo}>
                             <Text style={styles.expCat}>{cat?.name ?? '—'}</Text>
                             {e.note && <Text style={styles.expNote} numberOfLines={1}>{e.note}</Text>}
@@ -191,11 +189,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: colors.border,
   },
   expRowPressed: { opacity: 0.6 },
-  dot: {
-    width: 34, height: 34, borderRadius: 17,
-    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-  },
-  dotEmoji: { fontSize: 16 },
   expInfo:   { flex: 1, gap: 1 },
   expCat:    { fontFamily: typography.bodyMedium, fontSize: typography.size.md, color: colors.ink },
   expNote:   { fontFamily: typography.body, fontSize: typography.size.xs, color: colors.inkFaint },

@@ -9,6 +9,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { formatARS } from '../../lib/format';
 import { exportData, importData } from '../../lib/backup';
 import { CategorySheet } from '../../components/CategorySheet';
+import { CategoryDot } from '../../components/ui/CategoryDot';
 import { PaymentMethodSheet } from '../../components/PaymentMethodSheet';
 import { colors, spacing, radius, typography, shadows } from '../../lib/theme';
 import type { Category, PaymentMethod } from '../../types';
@@ -233,9 +234,7 @@ export default function SettingsScreen() {
               style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
               onPress={() => openEditCategory(cat)}
             >
-              <View style={[styles.dot, { backgroundColor: cat.color }]}>
-                <Text style={styles.dotEmoji}>{cat.icon}</Text>
-              </View>
+              <CategoryDot icon={cat.icon} size={32} />
               <Text style={styles.rowLabel}>{cat.name}</Text>
               <View style={styles.rowRight}>
                 {cat.monthlyBudget
@@ -257,8 +256,8 @@ export default function SettingsScreen() {
               style={({ pressed }) => [styles.row, styles.archivedRow, pressed && styles.rowPressed]}
               onPress={() => openEditCategory(cat)}
             >
-              <View style={[styles.dot, { backgroundColor: cat.color, opacity: 0.5 }]}>
-                <Text style={styles.dotEmoji}>{cat.icon}</Text>
+              <View style={{ opacity: 0.5 }}>
+                <CategoryDot icon={cat.icon} size={32} />
               </View>
               <Text style={[styles.rowLabel, styles.archivedText]}>{cat.name}</Text>
               <View style={styles.rowRight}>
