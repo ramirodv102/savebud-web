@@ -88,6 +88,11 @@ function CategoryRow({
           <View style={catStyles.nameRow}>
             <Text style={catStyles.name}>{category.name}</Text>
             {exceeded && <AlertTriangle size={13} color={colors.error} strokeWidth={2.5} />}
+            {exceeded && spent > category.monthlyBudget! && (
+              <Text style={catStyles.exceededBadge}>
+                +{formatARSShort(spent - category.monthlyBudget!)}
+              </Text>
+            )}
           </View>
           <View style={catStyles.rightRow}>
             <Text style={[catStyles.spent, exceeded && { color: colors.error }]}>
@@ -132,6 +137,11 @@ const catStyles = StyleSheet.create({
   spent:  { fontFamily: typography.display, fontSize: typography.size.md, color: colors.ink },
   budget: { fontFamily: typography.body, fontSize: typography.size.xs, color: colors.inkFaint },
   noLimitBar: { height: 5, backgroundColor: colors.border, borderRadius: 3 },
+  exceededBadge: {
+    fontFamily: typography.bodySemibold, fontSize: typography.size.xs,
+    color: colors.error, backgroundColor: colors.error + '18',
+    borderRadius: radius.sm, paddingHorizontal: 5, paddingVertical: 1,
+  },
 });
 
 // ── Payment method chip ───────────────────────────────────────────────────────

@@ -91,15 +91,19 @@ export function CategoryDetailSheet({ visible, category, expenses, onClose, onEx
                 {exceeded && (
                   <>
                     <AlertTriangle size={14} color={colors.error} strokeWidth={2.5} />
-                    <Text style={styles.exceededBadge}>
-                      +{formatARSShort(spent - category.monthlyBudget!)}
-                    </Text>
+                    {spent > category.monthlyBudget! && (
+                      <Text style={styles.exceededBadge}>
+                        +{formatARSShort(spent - category.monthlyBudget!)}
+                      </Text>
+                    )}
                   </>
                 )}
               </View>
               <Text style={[styles.headerSpent, exceeded && { color: colors.error }]}>
                 {exceeded
-                  ? `Te excediste ${formatARSShort(spent - category.monthlyBudget!)}`
+                  ? spent > category.monthlyBudget!
+                    ? `Te excediste de tu objetivo por ${formatARSShort(spent - category.monthlyBudget!)}`
+                    : '¡Llegaste al límite!'
                   : `${formatARSShort(spent)} este mes`}
               </Text>
             </View>
@@ -116,7 +120,9 @@ export function CategoryDetailSheet({ visible, category, expenses, onClose, onEx
                 <Text style={styles.budgetText}>{Math.round(pct)}% del límite</Text>
                 <Text style={styles.budgetText}>
                   {exceeded
-                    ? `${formatARSShort(spent - category.monthlyBudget!)} excedido`
+                    ? spent > category.monthlyBudget!
+                      ? `${formatARSShort(spent - category.monthlyBudget!)} de más`
+                      : 'límite exacto'
                     : `${formatARSShort(category.monthlyBudget! - spent)} restante`}
                 </Text>
               </View>
