@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, createElement } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -64,7 +64,6 @@ export function AddExpenseSheet({ visible, onClose }: Props) {
   const slideAnim    = useRef(new Animated.Value(SCREEN_H)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;
   const amountRef    = useRef<TextInput>(null);
-  const webDateRef   = useRef<any>(null);
 
   const activeCategories = categories.filter((c) => !c.archived);
   const activeMethods    = paymentMethods.filter((m) => !m.archived);
@@ -112,10 +111,6 @@ export function AddExpenseSheet({ visible, onClose }: Props) {
   }
 
   function handlePickDate() {
-    if (Platform.OS === 'web') {
-      webDateRef.current?.click();
-      return;
-    }
     const current = parseISO(date);
     if (Platform.OS === 'android') {
       DateTimePickerAndroid.open({
@@ -324,15 +319,6 @@ export function AddExpenseSheet({ visible, onClose }: Props) {
                 maxLength={120}
                 selectionColor={colors.primary}
               />
-
-              {Platform.OS === 'web' && createElement('input', {
-                ref: webDateRef,
-                type: 'date',
-                value: date,
-                max: todayISO(),
-                style: { opacity: 0, position: 'absolute', pointerEvents: 'none', width: 0, height: 0 },
-                onChange: (e: any) => { if (e.target.value) setDate(e.target.value); },
-              })}
 
               <View style={{ height: spacing.lg }} />
             </ScrollView>
