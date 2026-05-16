@@ -25,11 +25,6 @@ import type { Category, Expense, PaymentMethod } from '../../types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function heroBarColor(percentUsed: number, monthProgress: number): string {
-  if (percentUsed > 100) return '#FF8C00';
-  if (percentUsed > monthProgress * 100 + 10) return '#FFD426';
-  return colors.white;
-}
 
 // ── Empty state ───────────────────────────────────────────────────────────────
 
@@ -207,7 +202,6 @@ export default function DashboardScreen() {
   const today         = new Date();
   const daysInMonth   = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
   const monthProgress = today.getDate() / daysInMonth;
-  const barColor      = heroBarColor(stats.percentUsed, monthProgress);
 
   const categoryRows = useMemo(() =>
     categories
@@ -268,7 +262,7 @@ export default function DashboardScreen() {
               <Text style={styles.heroBudgetLine}>
                 de {formatARS(settings.totalMonthlyBudget)} presupuestados
               </Text>
-              <ProgressBar value={pct} color={barColor} height={5} backgroundColor="rgba(255,255,255,0.2)" />
+              <ProgressBar value={pct} color={colors.white} height={5} backgroundColor="rgba(255,255,255,0.2)" />
               <View style={styles.heroMeta}>
                 <Text style={styles.heroMetaText}>Día {today.getDate()} de {daysInMonth}</Text>
                 <Text style={styles.heroMetaText}>{Math.round(stats.percentUsed)}% usado</Text>
