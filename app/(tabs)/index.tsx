@@ -60,8 +60,8 @@ const emptyStyles = StyleSheet.create({
 // ── Category row ──────────────────────────────────────────────────────────────
 
 const BAR_COLOR: Record<string, string> = {
-  none:   '#B0ADA6',
-  soft:   '#B0ADA6',       // no warning state — gray until exceeded
+  none:   '#8C8880',
+  soft:   '#8C8880',       // no warning state — gray until exceeded
   strong: colors.error,
 };
 
@@ -85,16 +85,15 @@ function CategoryRow({
   const sorted = [...monthExpenses].sort((a, b) => b.date.localeCompare(a.date));
 
   return (
-    <View style={catStyles.row}>
+    <Pressable
+      style={({ pressed }) => [catStyles.row, pressed && hasExpenses && catStyles.rowPressed]}
+      onPress={hasExpenses ? onToggle : undefined}
+    >
       <View style={[catStyles.dot, { backgroundColor: category.color }]}>
         <Text style={catStyles.emoji}>{category.icon}</Text>
       </View>
       <View style={catStyles.info}>
-        {/* Header row — tappable to expand */}
-        <Pressable
-          onPress={hasExpenses ? onToggle : undefined}
-          style={catStyles.labelRow}
-        >
+        <View style={catStyles.labelRow}>
           <View style={catStyles.nameRow}>
             <Text style={catStyles.name}>{category.name}</Text>
             {exceeded && <AlertTriangle size={13} color={colors.error} strokeWidth={2.5} />}
@@ -107,7 +106,7 @@ function CategoryRow({
           <Text style={[catStyles.spent, alert !== 'none' && { color: barColor }]}>
             {formatARSShort(spent)}
           </Text>
-        </Pressable>
+        </View>
 
         {hasBudget ? (
           <>
@@ -143,7 +142,7 @@ function CategoryRow({
           </View>
         )}
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -153,6 +152,7 @@ const catStyles = StyleSheet.create({
     gap: spacing.md, paddingVertical: spacing.md,
     borderBottomWidth: 1, borderBottomColor: colors.border,
   },
+  rowPressed: { opacity: 0.6 },
   dot: {
     width: 38, height: 38, borderRadius: 19,
     alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2,
