@@ -60,8 +60,8 @@ const emptyStyles = StyleSheet.create({
 // ── Category row ──────────────────────────────────────────────────────────────
 
 const BAR_COLOR: Record<string, string> = {
-  none:   '#B0ADA6',       // neutral gray — uniform regardless of category
-  soft:   colors.warning,
+  none:   '#B0ADA6',
+  soft:   '#B0ADA6',       // no warning state — gray until exceeded
   strong: colors.error,
 };
 

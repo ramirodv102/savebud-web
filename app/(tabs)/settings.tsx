@@ -161,13 +161,16 @@ export default function SettingsScreen() {
 
   async function handleImport() {
     try {
-      const ok = await importData();
-      if (ok) {
-        await rehydrate();
-        Alert.alert('Importación exitosa', 'Tus datos fueron importados correctamente.');
+      const count = await importData();
+      if (count === -1) return;
+      await rehydrate();
+      if (count === 0) {
+        Alert.alert('Sin datos', 'No se encontraron gastos válidos en el archivo.');
+      } else {
+        Alert.alert('Importación exitosa', `Se importaron ${count} gasto${count !== 1 ? 's' : ''}.`);
       }
-    } catch {
-      Alert.alert('Error', 'El archivo no es válido.');
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'El archivo no es válido.');
     }
   }
 
