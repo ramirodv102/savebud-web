@@ -41,7 +41,7 @@ export type MonthStats = {
   percentUsed: number;
   paceRatio: number;
   dailyAverage: number;
-  expenseCount: number;
+  projectedMonthTotal: number;
   byCategory: Record<string, number>;
   byPaymentMethod: Record<string, number>;
 };

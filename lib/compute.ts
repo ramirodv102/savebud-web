@@ -58,8 +58,8 @@ export function computeMonthStats(expenses: Expense[], settings: Settings): Mont
       ? (percentUsed / 100) / monthProgress
       : 0;
 
-  const dailyAverage = daysInMonth > 0 ? totalSpent / daysInMonth : 0;
-  const expenseCount = filterCurrentMonth(expenses).length;
+  const dailyAverage = dayOfMonth > 0 ? totalSpent / dayOfMonth : 0;
+  const projectedMonthTotal = dailyAverage * daysInMonth;
 
   return {
     totalSpent,
@@ -67,7 +67,7 @@ export function computeMonthStats(expenses: Expense[], settings: Settings): Mont
     percentUsed,
     paceRatio,
     dailyAverage,
-    expenseCount,
+    projectedMonthTotal,
     byCategory: getSpentByCategory(expenses),
     byPaymentMethod: getSpentByPaymentMethod(expenses),
   };
@@ -80,12 +80,12 @@ export function totalBudgetAlert(stats: MonthStats): BudgetAlertLevel {
   return stats.percentUsed > 100 ? 'exceeded' : 'none';
 }
 
-export type CategoryAlertLevel = 'none' | 'soft' | 'strong';
+export type CategoryAlertLevel = 'none' | 'soft' | 'limit' | 'strong';
 export function categoryAlert(spent: number, budget: number | null): CategoryAlertLevel {
-  if (budget === null || budget === 0) return 'none';
-  const pct = (spent / budget) * 100;
-  if (pct >= 100) return 'strong';
-  if (pct >= 80) return 'soft';
+  if (!budget) return 'none';
+  if (spent > budget) return 'strong';   // exceeded — red
+  if (spent === budget) return 'limit';  // exactly at limit — orange
+  if ((spent / budget) >= 0.8) return 'soft'; // warning zone — amber
   return 'none';
 }
 

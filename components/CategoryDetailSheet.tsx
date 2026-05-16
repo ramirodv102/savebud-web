@@ -13,7 +13,8 @@ import type { Category, Expense } from '../types';
 
 const BAR_COLOR: Record<string, string> = {
   none:   '#8C8880',
-  soft:   '#8C8880',
+  soft:   colors.warning,
+  limit:  colors.alert,
   strong: colors.error,
 };
 
@@ -61,7 +62,7 @@ export function CategoryDetailSheet({ visible, category, expenses, onClose, onEx
   const pct       = hasBudget ? (spent / category.monthlyBudget!) * 100 : 0;
   const alert     = categoryAlert(spent, category.monthlyBudget);
   const barColor  = BAR_COLOR[alert];
-  const exceeded  = alert === 'strong';
+  const exceeded  = alert === 'strong' || alert === 'limit';
 
   const sorted = [...expenses].sort((a, b) => b.date.localeCompare(a.date));
 

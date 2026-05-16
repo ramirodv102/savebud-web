@@ -194,6 +194,10 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View style={styles.appHeader}>
+          <Text style={styles.appName}>SaveBud</Text>
+          <Text style={styles.appTagline}>Tu registro de gastos</Text>
+        </View>
         <Text style={styles.heading}>Ajustes</Text>
 
         {/* ── Presupuesto ───────────────────────────────────────────────── */}
@@ -370,6 +374,16 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+
+  appHeader: { paddingTop: spacing.md, paddingBottom: spacing.lg },
+  appName: {
+    fontFamily: typography.displayBold, fontSize: typography.size.hero,
+    color: colors.ink, lineHeight: typography.size.hero * 1.1,
+  },
+  appTagline: {
+    fontFamily: typography.body, fontSize: typography.size.sm,
+    color: colors.inkFaint, letterSpacing: 0.3,
+  },
 
   heading: {
     fontFamily: typography.displayBold,

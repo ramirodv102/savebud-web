@@ -13,8 +13,10 @@ import {
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react-native';
-import { format, parseISO, subDays, addDays, isAfter, startOfDay } from 'date-fns';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import { X } from 'lucide-react-native';
+import { format, parseISO, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useAppStore } from '../store/useAppStore';
 import { colors, spacing, radius, typography } from '../lib/theme';
@@ -50,12 +52,13 @@ export function AddExpenseSheet({ visible, onClose }: Props) {
   const paymentMethods = useAppStore((s) => s.paymentMethods);
   const addExpense     = useAppStore((s) => s.addExpense);
 
-  const [digits,     setDigits]     = useState('');
-  const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [methodId,   setMethodId]   = useState<string | null>(null);
-  const [date,       setDate]       = useState(todayISO());
-  const [note,       setNote]       = useState('');
-  const [saving,     setSaving]     = useState(false);
+  const [digits,         setDigits]         = useState('');
+  const [categoryId,     setCategoryId]     = useState<string | null>(null);
+  const [methodId,       setMethodId]       = useState<string | null>(null);
+  const [date,           setDate]           = useState(todayISO());
+  const [note,           setNote]           = useState('');
+  const [saving,         setSaving]         = useState(false);
+  const [iosPickerOpen,  setIosPickerOpen]  = useState(false);
 
   const slideAnim   = useRef(new Animated.Value(SCREEN_H)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;
@@ -96,6 +99,7 @@ export function AddExpenseSheet({ visible, onClose }: Props) {
       setMethodId(null);
       setDate(todayISO());
       setNote('');
+      setIosPickerOpen(false);
       onClose();
     });
   }, [onClose, slideAnim, backdropAnim]);
@@ -105,10 +109,22 @@ export function AddExpenseSheet({ visible, onClose }: Props) {
     if (parseInt(d || '0', 10) <= 100_000_000) setDigits(d);
   }
 
-  function shiftDate(delta: number) {
-    const next = addDays(parseISO(date), delta);
-    if (isAfter(startOfDay(next), startOfDay(new Date()))) return;
-    setDate(next.toISOString().slice(0, 10));
+  function handlePickDate() {
+    const current = parseISO(date);
+    if (Platform.OS === 'android') {
+      DateTimePickerAndroid.open({
+        value: current,
+        mode: 'date',
+        maximumDate: new Date(),
+        onChange: (event, selected) => {
+          if (event.type === 'set' && selected) {
+            setDate(selected.toISOString().slice(0, 10));
+          }
+        },
+      });
+    } else {
+      setIosPickerOpen(true);
+    }
   }
 
   async function handleSave() {
@@ -258,36 +274,41 @@ export function AddExpenseSheet({ visible, onClose }: Props) {
                   style={[styles.datePill, isToday && styles.datePillActive]}
                   onPress={() => setDate(todayISO())}
                 >
-                  <Text style={[styles.datePillText, isToday && styles.datePillActiveText]}>
-                    Hoy
-                  </Text>
+                  <Text style={[styles.datePillText, isToday && styles.datePillActiveText]}>Hoy</Text>
                 </Pressable>
 
                 <Pressable
                   style={[styles.datePill, isYesterday && styles.datePillActive]}
                   onPress={() => setDate(yesterdayISO())}
                 >
-                  <Text style={[styles.datePillText, isYesterday && styles.datePillActiveText]}>
-                    Ayer
-                  </Text>
+                  <Text style={[styles.datePillText, isYesterday && styles.datePillActiveText]}>Ayer</Text>
                 </Pressable>
 
-                <View style={[styles.dateNav, !isToday && !isYesterday && styles.dateNavActive]}>
-                  <Pressable onPress={() => shiftDate(-1)} hitSlop={8}>
-                    <ChevronLeft size={15} color={colors.inkMuted} strokeWidth={2} />
-                  </Pressable>
-                  <Text style={styles.dateNavText}>
-                    {format(parseISO(date), "d 'de' MMM.", { locale: es })}
+                <Pressable
+                  style={[styles.datePill, styles.dateOtherPill, !isToday && !isYesterday && styles.datePillActive]}
+                  onPress={handlePickDate}
+                >
+                  <Text style={[styles.datePillText, !isToday && !isYesterday && styles.datePillActiveText]}>
+                    {!isToday && !isYesterday
+                      ? format(parseISO(date), "d 'de' MMM.", { locale: es })
+                      : 'Otra fecha'}
                   </Text>
-                  <Pressable onPress={() => shiftDate(1)} hitSlop={8} disabled={isToday}>
-                    <ChevronRight
-                      size={15}
-                      color={isToday ? colors.border : colors.inkMuted}
-                      strokeWidth={2}
-                    />
-                  </Pressable>
-                </View>
+                </Pressable>
               </View>
+
+              {/* iOS inline date picker */}
+              {iosPickerOpen && Platform.OS === 'ios' && (
+                <DateTimePicker
+                  value={parseISO(date)}
+                  mode="date"
+                  display="spinner"
+                  maximumDate={new Date()}
+                  onChange={(_, selected) => {
+                    if (selected) setDate(selected.toISOString().slice(0, 10));
+                  }}
+                  locale="es-AR"
+                />
+              )}
 
               {/* ── Note ────────────────────────────────────────────────── */}
               <Text style={styles.label}>
@@ -455,27 +476,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.full, borderWidth: 1,
     borderColor: colors.border, backgroundColor: colors.surface,
   },
+  dateOtherPill: { flex: 1 },
   datePillActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   datePillText: {
     fontFamily: typography.bodyMedium,
     fontSize: typography.size.sm, color: colors.inkMuted,
+    textAlign: 'center',
   },
   datePillActiveText: { color: colors.white },
-  dateNav: {
-    flex: 1, flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 7, paddingHorizontal: spacing.sm,
-    borderRadius: radius.full, borderWidth: 1,
-    borderColor: colors.border, backgroundColor: colors.surface,
-  },
-  dateNavActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary + '12',
-  },
-  dateNavText: {
-    fontFamily: typography.bodyMedium,
-    fontSize: typography.size.sm, color: colors.ink,
-  },
 
   // Note input
   noteInput: {

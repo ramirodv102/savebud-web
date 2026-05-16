@@ -16,6 +16,7 @@ import { AlertBanner } from '../../components/AlertBanner';
 import { AddExpenseSheet } from '../../components/AddExpenseSheet';
 import { EditExpenseSheet } from '../../components/EditExpenseSheet';
 import { CategoryDetailSheet } from '../../components/CategoryDetailSheet';
+import { MonthExpensesSheet } from '../../components/MonthExpensesSheet';
 import { colors, spacing, radius, typography, shadows } from '../../lib/theme';
 import type { Category, Expense, PaymentMethod } from '../../types';
 
@@ -58,9 +59,12 @@ const emptyStyles = StyleSheet.create({
 
 const BAR_COLOR: Record<string, string> = {
   none:   '#8C8880',
-  soft:   '#8C8880',       // no warning state — gray until exceeded
+  soft:   colors.warning,
+  limit:  colors.alert,
   strong: colors.error,
 };
+
+const DOT_BG = '#EDEDED';
 
 function CategoryRow({
   category, spent, onPress,
@@ -73,14 +77,14 @@ function CategoryRow({
   const pct       = hasBudget ? (spent / category.monthlyBudget!) * 100 : 0;
   const alert     = categoryAlert(spent, category.monthlyBudget);
   const barColor  = BAR_COLOR[alert];
-  const exceeded  = alert === 'strong';
+  const exceeded  = alert === 'strong' || alert === 'limit';
 
   return (
     <Pressable
       style={({ pressed }) => [catStyles.row, pressed && catStyles.rowPressed]}
       onPress={onPress}
     >
-      <View style={[catStyles.dot, { backgroundColor: category.color }]}>
+      <View style={[catStyles.dot, { backgroundColor: DOT_BG }]}>
         <Text style={catStyles.emoji}>{category.icon}</Text>
       </View>
       <View style={catStyles.info}>
@@ -88,7 +92,7 @@ function CategoryRow({
           <View style={catStyles.nameRow}>
             <Text style={catStyles.name}>{category.name}</Text>
             {exceeded && <AlertTriangle size={13} color={colors.error} strokeWidth={2.5} />}
-            {exceeded && spent > category.monthlyBudget! && (
+            {alert === 'strong' && (
               <Text style={catStyles.exceededBadge}>
                 +{formatARSShort(spent - category.monthlyBudget!)}
               </Text>
@@ -180,9 +184,10 @@ export default function DashboardScreen() {
   const settings       = useAppStore((s) => s.settings);
 
   const stats = useMemo(() => computeMonthStats(expenses, settings), [expenses, settings]);
-  const [sheetOpen,          setSheetOpen]          = useState(false);
-  const [editingExpense,     setEditingExpense]      = useState<Expense | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [sheetOpen,           setSheetOpen]           = useState(false);
+  const [editingExpense,      setEditingExpense]       = useState<Expense | null>(null);
+  const [selectedCategoryId,  setSelectedCategoryId]  = useState<string | null>(null);
+  const [allExpensesOpen,     setAllExpensesOpen]      = useState(false);
 
   const expensesByCatId = useMemo(() => {
     const map: Record<string, Expense[]> = {};
@@ -246,59 +251,66 @@ export default function DashboardScreen() {
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <View style={styles.header}>
           <Text style={styles.monthLabel}>{currentMonthName()}</Text>
-          <Text style={styles.appName}>SaveBud</Text>
         </View>
 
         {/* ── Hero card ───────────────────────────────────────────────────── */}
-        <View style={[styles.heroCard, shadows.md]}>
+        <Pressable
+          style={({ pressed }) => [styles.heroCard, shadows.md, pressed && styles.heroCardPressed]}
+          onPress={() => setAllExpensesOpen(true)}
+        >
           <Text style={styles.heroLabel}>Gastado este mes</Text>
 
-          {/* Total spent vs budget */}
           <View style={styles.heroAmountRow}>
             <Text style={styles.heroAmount}>{formatARS(stats.totalSpent)}</Text>
             {hasBudget && (
-              <Text style={styles.heroBudget}>
-                {'/ '}{formatARSShort(settings.totalMonthlyBudget)}
-              </Text>
+              <Text style={styles.heroBudget}>de {formatARSShort(settings.totalMonthlyBudget)}</Text>
             )}
           </View>
 
-          {/* Filling progress bar */}
           {hasBudget && (
-            <ProgressBar
-              value={pct}
-              color={barColor}
-              height={8}
-              backgroundColor="rgba(255,255,255,0.2)"
-            />
+            <ProgressBar value={pct} color={barColor} height={8} backgroundColor="rgba(255,255,255,0.2)" />
           )}
 
-          {/* Meta row */}
           <View style={styles.heroMeta}>
             {hasBudget && (
-              <Text style={styles.heroMetaText}>
-                {Math.round(stats.percentUsed)}% del presupuesto
-              </Text>
+              <Text style={styles.heroMetaText}>{Math.round(stats.percentUsed)}% del presupuesto</Text>
             )}
-            <Text style={styles.heroMetaText}>
-              Día {today.getDate()} de {daysInMonth}
-            </Text>
+            <Text style={styles.heroMetaText}>Día {today.getDate()} de {daysInMonth}</Text>
           </View>
-        </View>
+        </Pressable>
 
         {/* ── Stats row ───────────────────────────────────────────────────── */}
         <View style={styles.statsRow}>
           <View style={[styles.statCard, shadows.sm]}>
             <Text style={styles.statLabel}>Promedio diario</Text>
             <Text style={styles.statValue}>{formatARSShort(stats.dailyAverage)}</Text>
-            <Text style={styles.statSub}>proyectado sobre el mes</Text>
+            <Text style={styles.statSub}>según días transcurridos</Text>
           </View>
           <View style={[styles.statCard, shadows.sm]}>
-            <Text style={styles.statLabel}>Gastos</Text>
-            <Text style={styles.statValue}>{stats.expenseCount}</Text>
-            <Text style={styles.statSub}>este mes</Text>
+            <Text style={styles.statLabel}>Proyección</Text>
+            <Text style={styles.statValue}>{formatARSShort(stats.projectedMonthTotal)}</Text>
+            <Text style={styles.statSub}>
+              {hasBudget
+                ? `vs ${formatARSShort(settings.totalMonthlyBudget)} presup.`
+                : 'a fin de mes'}
+            </Text>
           </View>
         </View>
+
+        {/* ── Pace indicator ──────────────────────────────────────────────── */}
+        {hasBudget && hasExpenses && (() => {
+          const pct2 = Math.round(Math.abs(stats.paceRatio - 1) * 100);
+          const above = stats.paceRatio > 1;
+          return (
+            <View style={[styles.paceRow, above ? styles.paceAbove : styles.paceBelow]}>
+              <Text style={[styles.paceText, above ? styles.paceTextAbove : styles.paceTextBelow]}>
+                {above
+                  ? `A prestar atención — gastás un ${pct2}% más rápido de lo esperado`
+                  : `Vas bien — gastás un ${pct2}% más lento de lo esperado`}
+              </Text>
+            </View>
+          );
+        })()}
 
         {/* ── Content or empty state ───────────────────────────────────────── */}
         {!hasExpenses ? (
@@ -362,6 +374,14 @@ export default function DashboardScreen() {
         onClose={() => setSelectedCategoryId(null)}
         onExpensePress={setEditingExpense}
       />
+      <MonthExpensesSheet
+        visible={allExpensesOpen}
+        expenses={filterCurrentMonth(expenses)}
+        totalSpent={stats.totalSpent}
+        budget={settings.totalMonthlyBudget}
+        onClose={() => setAllExpensesOpen(false)}
+        onExpensePress={setEditingExpense}
+      />
     </SafeAreaView>
   );
 }
@@ -375,15 +395,12 @@ const styles = StyleSheet.create({
     alignItems: 'center', marginBottom: spacing.lg,
   },
   monthLabel: { fontFamily: typography.displayBold, fontSize: typography.size.xl, color: colors.ink },
-  appName: {
-    fontFamily: typography.body, fontSize: typography.size.sm,
-    color: colors.inkFaint, letterSpacing: 1.5, textTransform: 'uppercase',
-  },
 
   heroCard: {
     backgroundColor: colors.primary, borderRadius: radius.xl,
     padding: spacing.xl, gap: spacing.md, marginBottom: spacing.lg,
   },
+  heroCardPressed: { opacity: 0.92 },
   heroLabel: {
     fontFamily: typography.body, fontSize: typography.size.sm,
     color: 'rgba(255,255,255,0.65)', letterSpacing: 0.3,
@@ -407,17 +424,27 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.55)',
   },
 
-  statsRow: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.lg },
+  statsRow: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.sm },
   statCard: {
     flex: 1, backgroundColor: colors.surface,
-    borderRadius: radius.lg, padding: spacing.md, gap: 2,
+    borderRadius: radius.lg, padding: spacing.sm + 2, gap: 1,
   },
   statLabel: {
-    fontFamily: typography.body, fontSize: typography.size.xs,
+    fontFamily: typography.body, fontSize: 10,
     color: colors.inkFaint, textTransform: 'uppercase', letterSpacing: 0.5,
   },
-  statValue: { fontFamily: typography.displayBold, fontSize: typography.size.xl, color: colors.ink },
-  statSub: { fontFamily: typography.body, fontSize: typography.size.xs, color: colors.inkMuted },
+  statValue: { fontFamily: typography.displayBold, fontSize: typography.size.lg, color: colors.ink },
+  statSub: { fontFamily: typography.body, fontSize: 10, color: colors.inkMuted },
+
+  paceRow: {
+    borderRadius: radius.lg, paddingVertical: spacing.sm, paddingHorizontal: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  paceAbove: { backgroundColor: colors.error + '14' },
+  paceBelow: { backgroundColor: colors.primary + '14' },
+  paceText: { fontFamily: typography.body, fontSize: typography.size.xs, lineHeight: 17 },
+  paceTextAbove: { color: colors.error },
+  paceTextBelow: { color: colors.primary },
 
   section: { marginBottom: spacing.xl },
   sectionTitle: {
