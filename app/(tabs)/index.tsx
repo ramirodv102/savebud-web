@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus } from 'lucide-react-native';
@@ -12,6 +12,7 @@ import {
 import { formatARS, formatARSShort, currentMonthName } from '../../lib/format';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { AlertBanner } from '../../components/AlertBanner';
+import { AddExpenseSheet } from '../../components/AddExpenseSheet';
 import { colors, spacing, radius, typography, shadows } from '../../lib/theme';
 import type { Category, PaymentMethod } from '../../types';
 
@@ -143,6 +144,7 @@ export default function DashboardScreen() {
   const settings       = useAppStore((s) => s.settings);
 
   const stats = useMemo(() => computeMonthStats(expenses, settings), [expenses, settings]);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const budgetAlert = totalBudgetAlert(stats);
   const paceAlarm   = isPaceAlarm(stats);
@@ -285,10 +287,12 @@ export default function DashboardScreen() {
       {/* ── FAB ─────────────────────────────────────────────────────────── */}
       <Pressable
         style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
-        onPress={() => { /* Phase 3: open AddExpenseSheet */ }}
+        onPress={() => setSheetOpen(true)}
       >
         <Plus size={28} color={colors.white} strokeWidth={2.5} />
       </Pressable>
+
+      <AddExpenseSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} />
     </SafeAreaView>
   );
 }
