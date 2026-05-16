@@ -4,7 +4,7 @@ import {
   ScrollView, Animated, Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { X, AlertTriangle, ChevronRight } from 'lucide-react-native';
+import { X, AlertTriangle, Target, ChevronRight } from 'lucide-react-native';
 import { categoryAlert } from '../lib/compute';
 import { formatARSShort, dateLabel } from '../lib/format';
 import { ProgressBar } from './ui/ProgressBar';
@@ -62,7 +62,7 @@ export function CategoryDetailSheet({ visible, category, expenses, onClose, onEx
   const pct       = hasBudget ? (spent / category.monthlyBudget!) * 100 : 0;
   const alert     = categoryAlert(spent, category.monthlyBudget);
   const barColor  = BAR_COLOR[alert];
-  const exceeded  = alert === 'strong' || alert === 'limit';
+  const exceeded  = alert === 'strong';
 
   const sorted = [...expenses].sort((a, b) => b.date.localeCompare(a.date));
 
@@ -89,14 +89,19 @@ export function CategoryDetailSheet({ visible, category, expenses, onClose, onEx
             <View style={styles.headerInfo}>
               <View style={styles.headerNameRow}>
                 <Text style={styles.headerName}>{category.name}</Text>
-                {exceeded && <AlertTriangle size={14} color={colors.error} strokeWidth={2.5} />}
+                {exceeded           && <AlertTriangle size={14} color={colors.error} strokeWidth={2.5} />}
+                {alert === 'limit'  && <Target size={14} color={colors.alert} strokeWidth={2.5} />}
               </View>
-              <Text style={[styles.headerSpent, exceeded && { color: colors.error }]}>
+              <Text style={[
+                styles.headerSpent,
+                exceeded         && { color: colors.error },
+                alert === 'limit' && { color: colors.alert },
+              ]}>
                 {exceeded
-                  ? spent > category.monthlyBudget!
-                    ? `Te excediste de tu objetivo por ${formatARSShort(spent - category.monthlyBudget!)}`
-                    : '¡Llegaste al límite!'
-                  : `${formatARSShort(spent)} este mes`}
+                  ? `Te excediste de tu objetivo por ${formatARSShort(spent - category.monthlyBudget!)}`
+                  : alert === 'limit'
+                    ? '¡Llegaste al límite!'
+                    : `${formatARSShort(spent)} este mes`}
               </Text>
             </View>
             <Pressable onPress={dismiss} hitSlop={12}>
@@ -112,10 +117,10 @@ export function CategoryDetailSheet({ visible, category, expenses, onClose, onEx
                 <Text style={styles.budgetText}>{Math.round(pct)}% del límite</Text>
                 <Text style={styles.budgetText}>
                   {exceeded
-                    ? spent > category.monthlyBudget!
-                      ? `${formatARSShort(spent - category.monthlyBudget!)} de más`
-                      : 'límite exacto'
-                    : `${formatARSShort(category.monthlyBudget! - spent)} restante`}
+                    ? `${formatARSShort(spent - category.monthlyBudget!)} de más`
+                    : alert === 'limit'
+                      ? 'límite exacto'
+                      : `${formatARSShort(category.monthlyBudget! - spent)} restante`}
                 </Text>
               </View>
             </View>

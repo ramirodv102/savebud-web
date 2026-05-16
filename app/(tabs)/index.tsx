@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Plus, AlertTriangle, ChevronRight } from 'lucide-react-native';
+import { Plus, AlertTriangle, Target, ChevronRight } from 'lucide-react-native';
 import { useAppStore } from '../../store/useAppStore';
 import {
   computeMonthStats,
@@ -17,6 +17,7 @@ import { AddExpenseSheet } from '../../components/AddExpenseSheet';
 import { EditExpenseSheet } from '../../components/EditExpenseSheet';
 import { CategoryDetailSheet } from '../../components/CategoryDetailSheet';
 import { MonthExpensesSheet } from '../../components/MonthExpensesSheet';
+import { StatDetailSheet, StatMode } from '../../components/StatDetailSheet';
 import { colors, spacing, radius, typography, shadows } from '../../lib/theme';
 import type { Category, Expense, PaymentMethod } from '../../types';
 
@@ -77,8 +78,6 @@ function CategoryRow({
   const pct       = hasBudget ? (spent / category.monthlyBudget!) * 100 : 0;
   const alert     = categoryAlert(spent, category.monthlyBudget);
   const barColor  = BAR_COLOR[alert];
-  const exceeded  = alert === 'strong' || alert === 'limit';
-
   return (
     <Pressable
       style={({ pressed }) => [catStyles.row, pressed && catStyles.rowPressed]}
@@ -91,7 +90,8 @@ function CategoryRow({
         <View style={catStyles.labelRow}>
           <View style={catStyles.nameRow}>
             <Text style={catStyles.name}>{category.name}</Text>
-            {exceeded && <AlertTriangle size={13} color={colors.error} strokeWidth={2.5} />}
+            {alert === 'strong' && <AlertTriangle size={13} color={colors.error} strokeWidth={2.5} />}
+            {alert === 'limit'  && <Target size={13} color={colors.alert} strokeWidth={2.5} />}
             {alert === 'strong' && (
               <Text style={catStyles.exceededBadge}>
                 +{formatARSShort(spent - category.monthlyBudget!)}
@@ -99,7 +99,7 @@ function CategoryRow({
             )}
           </View>
           <View style={catStyles.rightRow}>
-            <Text style={[catStyles.spent, exceeded && { color: colors.error }]}>
+            <Text style={[catStyles.spent, alert === 'strong' && { color: colors.error }, alert === 'limit' && { color: colors.alert }]}>
               {formatARSShort(spent)}
             </Text>
             <ChevronRight size={14} color={colors.inkFaint} strokeWidth={2} />
@@ -188,6 +188,7 @@ export default function DashboardScreen() {
   const [editingExpense,      setEditingExpense]       = useState<Expense | null>(null);
   const [selectedCategoryId,  setSelectedCategoryId]  = useState<string | null>(null);
   const [allExpensesOpen,     setAllExpensesOpen]      = useState(false);
+  const [statMode,            setStatMode]             = useState<StatMode | null>(null);
 
   const expensesByCatId = useMemo(() => {
     const map: Record<string, Expense[]> = {};
@@ -281,12 +282,18 @@ export default function DashboardScreen() {
 
         {/* ── Stats row ───────────────────────────────────────────────────── */}
         <View style={styles.statsRow}>
-          <View style={[styles.statCard, shadows.sm]}>
+          <Pressable
+            style={({ pressed }) => [styles.statCard, shadows.sm, pressed && styles.statCardPressed]}
+            onPress={() => setStatMode('average')}
+          >
             <Text style={styles.statLabel}>Promedio diario</Text>
             <Text style={styles.statValue}>{formatARSShort(stats.dailyAverage)}</Text>
             <Text style={styles.statSub}>según días transcurridos</Text>
-          </View>
-          <View style={[styles.statCard, shadows.sm]}>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.statCard, shadows.sm, pressed && styles.statCardPressed]}
+            onPress={() => setStatMode('projection')}
+          >
             <Text style={styles.statLabel}>Proyección</Text>
             <Text style={styles.statValue}>{formatARSShort(stats.projectedMonthTotal)}</Text>
             <Text style={styles.statSub}>
@@ -294,7 +301,7 @@ export default function DashboardScreen() {
                 ? `vs ${formatARSShort(settings.totalMonthlyBudget)} presup.`
                 : 'a fin de mes'}
             </Text>
-          </View>
+          </Pressable>
         </View>
 
         {/* ── Pace indicator ──────────────────────────────────────────────── */}
@@ -374,6 +381,17 @@ export default function DashboardScreen() {
         onClose={() => setSelectedCategoryId(null)}
         onExpensePress={setEditingExpense}
       />
+      <StatDetailSheet
+        visible={statMode !== null}
+        mode={statMode ?? 'average'}
+        dailyAverage={stats.dailyAverage}
+        projectedTotal={stats.projectedMonthTotal}
+        dayOfMonth={today.getDate()}
+        daysInMonth={daysInMonth}
+        budget={settings.totalMonthlyBudget}
+        expenses={filterCurrentMonth(expenses)}
+        onClose={() => setStatMode(null)}
+      />
       <MonthExpensesSheet
         visible={allExpensesOpen}
         expenses={filterCurrentMonth(expenses)}
@@ -429,6 +447,7 @@ const styles = StyleSheet.create({
     flex: 1, backgroundColor: colors.surface,
     borderRadius: radius.lg, padding: spacing.sm + 2, gap: 1,
   },
+  statCardPressed: { opacity: 0.7 },
   statLabel: {
     fontFamily: typography.body, fontSize: 10,
     color: colors.inkFaint, textTransform: 'uppercase', letterSpacing: 0.5,
