@@ -33,6 +33,7 @@ type AppState = {
 
   // Data management
   rehydrate: () => Promise<void>;
+  clearAllData: () => Promise<void>;
 };
 
 const DEFAULT_SETTINGS: Settings = {
@@ -142,5 +143,12 @@ export const useAppStore = create<AppState>((set) => ({
   updateSettings: async (patch) => {
     await repo.updateSettings(patch);
     set((state) => ({ settings: { ...state.settings, ...patch } }));
+  },
+
+  // ── Data management ──────────────────────────────────────────────────────
+
+  clearAllData: async () => {
+    await repo.clearAllData();
+    set({ expenses: [], categories: [], paymentMethods: [], settings: DEFAULT_SETTINGS });
   },
 }));
