@@ -84,7 +84,7 @@ export type CategoryAlertLevel = 'none' | 'soft' | 'strong';
 export function categoryAlert(spent: number, budget: number | null): CategoryAlertLevel {
   if (budget === null || budget === 0) return 'none';
   const pct = (spent / budget) * 100;
-  if (pct > 100) return 'strong';
+  if (pct >= 100) return 'strong';
   if (pct >= 80) return 'soft';
   return 'none';
 }

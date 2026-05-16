@@ -88,10 +88,19 @@ export function CategoryDetailSheet({ visible, category, expenses, onClose, onEx
             <View style={styles.headerInfo}>
               <View style={styles.headerNameRow}>
                 <Text style={styles.headerName}>{category.name}</Text>
-                {exceeded && <AlertTriangle size={14} color={colors.error} strokeWidth={2.5} />}
+                {exceeded && (
+                  <>
+                    <AlertTriangle size={14} color={colors.error} strokeWidth={2.5} />
+                    <Text style={styles.exceededBadge}>
+                      +{formatARSShort(spent - category.monthlyBudget!)}
+                    </Text>
+                  </>
+                )}
               </View>
               <Text style={[styles.headerSpent, exceeded && { color: colors.error }]}>
-                {formatARSShort(spent)} este mes
+                {exceeded
+                  ? `Te excediste ${formatARSShort(spent - category.monthlyBudget!)}`
+                  : `${formatARSShort(spent)} este mes`}
               </Text>
             </View>
             <Pressable onPress={dismiss} hitSlop={12}>
@@ -185,6 +194,11 @@ const styles = StyleSheet.create({
   headerSpent: {
     fontFamily: typography.body, fontSize: typography.size.sm, color: colors.inkMuted,
     marginTop: 2,
+  },
+  exceededBadge: {
+    fontFamily: typography.bodySemibold, fontSize: typography.size.xs,
+    color: colors.error, backgroundColor: colors.error + '18',
+    borderRadius: radius.sm, paddingHorizontal: 5, paddingVertical: 1,
   },
 
   budgetSection: {
